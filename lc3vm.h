@@ -10,9 +10,10 @@
 // REGISTERS
 // 8 general porpouse (R0 also for stdin/stdout)
 // RPC program counter (memory address of the next instruction)
-// RCND consitional register. Give information about previous operation
+// RCND conditional register. Give information about previous operation
 // RCNT counter register
 enum regist{ R0 = 0, R1, R2, R3, R4, R5, R6, R7, RPC, RCND, RCNT };
+#define PC_START 0x3000 // default PC start position
 #define REG_SIZE RCNT
 
 // CONDITION FLAGS
@@ -28,22 +29,22 @@ void update_flag(uint16_t *reg, enum regist r);
 // OPERATIONS
 // operation are in the first 4 bits of a memory address
 // in total we have 2^4 = 16 operation
-//void OP_BR(uint16_t *reg, uint16_t instruction);   // 0x0 0000 Conditional Branch 
-void OP_ADD(uint16_t *reg, uint16_t instruction);  // 0x1 0001 Addition
-//void OP_LD(uint16_t *reg, uint16_t instruction);   // 0x2 0010 Load RPC + offset
-//void OP_ST(uint16_t *reg, uint16_t instruction);   // 0x3 0011 Store
-//void OP_JSR(uint16_t *reg, uint16_t instruction);  // 0x4 0100 Jump to subrutine
-//void OP_AND(uint16_t *reg, uint16_t instruction);  // 0x5 0101 Bitwise and
-//void OP_LDR(uint16_t *reg, uint16_t instruction);  // 0x6 0110 Load base + offset
-//void OP_STR(uint16_t *reg, uint16_t instruction);  // 0x7 0111 Store base + offset
-//void OP_RTI(uint16_t *reg, uint16_t instruction);  // 0x8 1000 Return from intrrupt
-//void OP_NOT(uint16_t *reg, uint16_t instruction);  // 0x9 1001 Bitwise not
-void OP_LDI(uint16_t *reg, uint16_t instruction);  // 0xA 1010 Load Indirect
-//void OP_STI(uint16_t *reg, uint16_t instruction);  // 0xB 1011 Store Indirect
-//void OP_JMP(uint16_t *reg, uint16_t instruction);  // 0xC 1100 Jump/return to subrutine
-//void OP_RES(uint16_t *reg, uint16_t instruction);  // 0xD 1101 Unused 
-//void OP_LEA(uint16_t *reg, uint16_t instruction);  // 0xE 1110 Load effective address
-//void OP_TRAP(uint16_t *reg, uint16_t instruction); // 0xF 1111 System trap/call
+void OP_BR(uint16_t *reg, uint16_t instruction);                    // 0x0 0000 Conditional Branch 
+void OP_ADD(uint16_t *reg, uint16_t instruction);                   // 0x1 0001 Addition
+//void OP_LD(uint16_t *reg, uint16_t instruction);                  // 0x2 0010 Load RPC + offset
+//void OP_ST(uint16_t *reg, uint16_t instruction);                  // 0x3 0011 Store
+void OP_JSR(uint16_t *reg, uint16_t instruction);                   // 0x4 0100 Jump to subrutine
+void OP_AND(uint16_t *reg, uint16_t instruction);                   // 0x5 0101 Bitwise and
+//void OP_LDR(uint16_t *reg, uint16_t instruction);                 // 0x6 0110 Load base + offset
+//void OP_STR(uint16_t *reg, uint16_t instruction);                 // 0x7 0111 Store base + offset
+void OP_RTI();                                                      // 0x8 1000 Return from intrrupt (not implemented)
+void OP_NOT(uint16_t *reg, uint16_t instruction);                   // 0x9 1001 Bitwise not
+void OP_LDI(uint16_t *reg, uint16_t *memory, uint16_t instruction); // 0xA 1010 Load Indirect
+//void OP_STI(uint16_t *reg, uint16_t instruction);                 // 0xB 1011 Store Indirect
+void OP_JMP(uint16_t *reg, uint16_t instruction);                   // 0xC 1100 Jump/return to subrutine
+void OP_RES();                                                      // 0xD 1101 Unused (not implemented)
+//void OP_LEA(uint16_t *reg, uint16_t instruction);                 // 0xE 1110 Load effective address
+//void OP_TRAP(uint16_t *reg, uint16_t instruction);                 // 0xF 1111 System trap/call
 
 
 // MAPPED REGISTERS
