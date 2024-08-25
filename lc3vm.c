@@ -116,27 +116,94 @@ void OP_NOT(uint16_t *reg, uint16_t instruction)
 // ============================= LOAD DATA INSTRUCTIONS ==============================
 // ===================================================================================
 
-// ==================================== LDI ===========================================
-// LDI: Load Indirect, is used to load a value from a location in memory into a register
+// ==================================== LD ============================================
+// LD: load data from main memory to a register DR1
+// PC + offset memory address has memory address of the actual address.
 //
-//                              1010|DR1|PCOFFSET09
+//                              1010|DR1|PCOFFSET9
 // Where: 
 //  - 1010 is the operetion code for OP_LDI
 //  - DR1 is the destination register that store the loaded value
 //  - PCoffset9 is 9 bit address in main memory from PC_START
-void OP_LDI(uint16_t *reg, uint16_t *memory, uint16_t instruction)
+void OP_LD(uint16_t *reg, uint16_t *memory, uint16_t instruction)
 {
     uint16_t DR1 = (instruction >> 9) & 0x7;
-    uint16_t PCoffset9 = sign_extend(instruction & 0x1ff, 9);
+    uint16_t PCoffset9 = sign_extend(instruction & 0x1FF, 9);
     reg[DR1] = mem_read(memory, reg[RPC] + PCoffset9);
     update_flag(reg, DR1);
 }
 
+// ==================================== LDI ===========================================
+// LDI: Load Indirect, is used to load a value from a location in memory into a register
+// PC + offset memory address has memory address of the actual address.
+// 1010|DR1|PCOFFSET9
+void OP_LDI(uint16_t *reg, uint16_t *memory, uint16_t instruction)
+{
+    uint16_t DR1 = (instruction >> 9) & 0x7;
+    uint16_t PCoffset9 = sign_extend(instruction & 0x1ff, 9);
+    reg[DR1] = mem_read(memory, mem_read(memory, reg[RPC] + PCoffset9));
+    update_flag(reg, DR1);
+}
+
+// ==================================== LDR ===========================================
+// LDR: Load Register: is like LD but we specify a base to start offset
+// 0110|DR1|SR1|OFFST6
+void OP_LDR(uint16_t *reg, uint16_t *memory, uint16_t instruction)
+{
+    uint16_t DR1 = (instruction >> 9) & 0x7;
+    uint16_t SR1 = (instruction >> 6) & 0x7;
+    uint16_t SRoffset6 = sign_extend(instruction & 0x3f, 6);
+    reg[DR1] = mem_read(memory, reg[SR1] + SRoffset6);
+    update_flag(reg, DR1);
+}
+
+// ==================================== LEA ===========================================
+// LEA Load Effective Address: load memory address to refister DR1 but it does not 
+// bring program data into register but only the memory location.
+// 1110|DR1|PCOFFSET9
+void OP_LEA(uint16_t *reg, uint16_t instruction)
+{
+    uint16_t DR1 = (instruction >> 9) & 0x7;
+    uint16_t PCoffset9 = sign_extend(instruction & 0x1ff, 9);
+    reg[DR1] = reg[RPC] + PCoffset9;
+    update_flag(reg, DR1);
+}
 
 // ===================================================================================
 // ============================ STORE DATA INSTRUCTIONS ==============================
 // ===================================================================================
 
+// ==================================== ST ============================================
+// ST: store the value of a given register SR1 to a memory location OFFSET9.
+// 0011|SR1|PCOFFSET9
+void OP_ST(uint16_t *reg, uint16_t *memory, uint16_t instruction)
+{
+    uint16_t SR1 = (instruction >> 9) & 0x7;
+    uint16_t PCoffset9 = sign_extend(instruction & 0x1FF, 9);
+    mem_write(memory, reg[RPC] + PCoffset9, reg[SR1]);
+}
+
+// ==================================== STI ============================================
+// STI: like ST but instead of writing to memory address directly, it use intermediate
+// address from the main memory where the actual address is.
+// 0011|SR1|PCOFFSET9
+void OP_STI(uint16_t *reg, uint16_t *memory, uint16_t instruction)
+{
+    uint16_t SR1 = (instruction >> 9) & 0x7;
+    uint16_t PCoffset9 = sign_extend(instruction & 0x1FF, 9);
+    mem_write(memory, mem_read(memory, reg[RPC] + PCoffset9), reg[SR1]);
+}
+
+// ==================================== STR ============================================
+// STR: like ST but instead of starting from RPC, we can specify another base in SR2.
+// 0011|SR1|SR2|OFFST6
+void OP_STR(uint16_t *reg, uint16_t *memory, uint16_t instruction)
+{
+    uint16_t SR1 = (instruction >> 9) & 0x7;
+    uint16_t SR2 = (instruction >> 6) & 0x7;
+    uint16_t offset = sign_extend(instruction & 0x1FF, 6);
+    mem_write(memory, reg[SR2] + offset, reg[SR1]);
+}
 
 
 // ===================================================================================
@@ -185,6 +252,14 @@ void OP_BR(uint16_t *reg, uint16_t instruction)
     if (COND_FLAG & reg[RCND])
         reg[RPC] += PC_OFFSET;
 }
+
+
+// ===================================================================================
+// ============================ TRAP ROUTINE INSTRUCTIONS ============================
+// ===================================================================================
+// TRAP routines are used for performing common tasks and interacting with the I/O
+// TRAP routines are identified by trap code -> 1111|CODE|TRAPVEC8
+
 
 
 // ===================================================================================
