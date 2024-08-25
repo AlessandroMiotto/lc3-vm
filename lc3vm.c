@@ -1,5 +1,7 @@
-#include "lc3vm.h"
+#include <stdio.h>
 #include <stdint.h>
+
+#include "lc3vm.h"
 
 // Update RCND in base of r-th sign. Used for condition check
 void update_flag(uint16_t *reg, enum regist r)  // as convention, the sign of our value is in the most significant bit
@@ -9,6 +11,24 @@ void update_flag(uint16_t *reg, enum regist r)  // as convention, the sign of ou
     else reg[RCND] = FP;                        // if regrister r has 15th element zero 0b0***************
 }
 
+
+// Memory Read Access: return value stored into memory address 
+uint16_t mem_read(uint16_t *memory, uint16_t address)
+{
+    // If memory is mapped keyboard memory
+    if (address == MR_KBSR) {
+        // to implement
+        printf("HIT MAPPED ADDRESS. Not implemented yet!\n");
+    }
+    
+    return memory[address];
+}
+
+// Memory Write: write val in memory address
+void mem_write(uint16_t *memory, uint16_t address, uint16_t val)
+{
+    memory[address] = val;
+}
 
 
 // ===================================================================================
@@ -57,4 +77,19 @@ uint16_t sign_extend(uint16_t x, int bit_count)
         x |= (0xFFFF << bit_count);
     
     return x;
+}
+
+
+// ==================================== LDI ===========================================
+// LDI: Load Indirect, is used to load a value from a location in memory into a register
+//
+//                              1010|DR1|PCOFFSET09
+// Where: 
+//  - 1010 is the operetion code for OP_LDI
+//  - DR1 is the destination register that store the loaded value
+//  - PCoffset9 is 9 bit address in main memory from PC_START
+void OP_LDI(uint16_t *reg, uint16_t instruction)
+{
+    uint16_t DR1 = (instruction >> 9) & 0x7;
+    uint16_t PCoffset9 = sign_extend(instruction & 0x1ff, 9);
 }

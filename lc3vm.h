@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+// MAIN MEMORY
+// Main memory, max 65535 instructions (128 kB)
+#define MEMORY_MAX (1 << 16)
+
 // REGISTERS
 // 8 general porpouse (R0 also for stdin/stdout)
 // RPC program counter (memory address of the next instruction)
@@ -34,7 +38,7 @@ void OP_ADD(uint16_t *reg, uint16_t instruction);  // 0x1 0001 Addition
 //void OP_STR(uint16_t *reg, uint16_t instruction);  // 0x7 0111 Store base + offset
 //void OP_RTI(uint16_t *reg, uint16_t instruction);  // 0x8 1000 Return from intrrupt
 //void OP_NOT(uint16_t *reg, uint16_t instruction);  // 0x9 1001 Bitwise not
-//void OP_LDI(uint16_t *reg, uint16_t instruction);  // 0xA 1010 Load Indirect
+void OP_LDI(uint16_t *reg, uint16_t instruction);  // 0xA 1010 Load Indirect
 //void OP_STI(uint16_t *reg, uint16_t instruction);  // 0xB 1011 Store Indirect
 //void OP_JMP(uint16_t *reg, uint16_t instruction);  // 0xC 1100 Jump/return to subrutine
 //void OP_RES(uint16_t *reg, uint16_t instruction);  // 0xD 1101 Unused 
@@ -42,7 +46,15 @@ void OP_ADD(uint16_t *reg, uint16_t instruction);  // 0x1 0001 Addition
 //void OP_TRAP(uint16_t *reg, uint16_t instruction); // 0xF 1111 System trap/call
 
 
+// MAPPED REGISTERS
+// Memory used for interact with special hardware. LC-3 has keyboard status
+// register (if a key is pressed) and keyboard data register (which key)
+enum {MR_KBSR = 0xFE00, MR_KBDR = 0xFE02};
+
+
 // UTILS
 uint16_t sign_extend(uint16_t x, int bit_count);
+uint16_t mem_read(uint16_t *memory, uint16_t address);
+void mem_write(uint16_t *memory, uint16_t address, uint16_t val);
 
 #endif
