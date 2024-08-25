@@ -2,6 +2,7 @@
 #define H_LC3VM
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // MAIN MEMORY
 // Main memory, max 65535 instructions (128 kB)
@@ -44,7 +45,20 @@ void OP_STI(uint16_t *reg, uint16_t *memory, uint16_t instruction); // 0xB 1011 
 void OP_JMP(uint16_t *reg, uint16_t instruction);                   // 0xC 1100 Jump/return to subrutine
 void OP_RES();                                                      // 0xD 1101 Unused (not implemented)
 void OP_LEA(uint16_t *reg, uint16_t instruction);                   // 0xE 1110 Load effective address
-//void OP_TRAP(uint16_t *reg, uint16_t instruction);                // 0xF 1111 System trap/call
+void OP_TRAP(uint16_t *reg, uint16_t *memory, 						// 0xF 1111 System trap/call
+			 uint16_t instruction, bool running);					
+
+
+// TRAP FUNCTIONS
+void T_getc(uint16_t *reg);						// 0x20 Read a char from keyboard
+void T_out(uint16_t *reg);						// 0x21 Write a char to console
+void T_puts(uint16_t *reg, uint16_t *memory);	// 0x22 Write a string of chars to the console
+void T_in(uint16_t *reg);						// 0x23 Read a char from keyboard and print to console
+void T_putsp(uint16_t *reg, uint16_t *memory);	// 0x24 Output a byte string
+void T_halt(bool running);						// 0x25 Halt the execution
+
+enum traps {TRAP_GETC = 0x20, TRAP_OUT = 0x21, TRAP_PUTS = 0x22, 
+			TRAP_IN = 0x23, TRAP_PUTSP = 0x24, TRAP_HALT = 0x25 };
 
 
 // MAPPED REGISTERS

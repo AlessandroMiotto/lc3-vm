@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "lc3vm.h"
 
@@ -258,7 +259,79 @@ void OP_BR(uint16_t *reg, uint16_t instruction)
 // ============================ TRAP ROUTINE INSTRUCTIONS ============================
 // ===================================================================================
 // TRAP routines are used for performing common tasks and interacting with the I/O
-// TRAP routines are identified by trap code -> 1111|CODE|TRAPVEC8
+// TRAP routines are identified by trap code -> 1111|0000|TRAPVEC8
+void OP_TRAP(uint16_t *reg, uint16_t *memeory, uint16_t instruction, bool running)
+{
+    switch (instruction & 0xFF) {
+        case TRAP_GETC:
+            T_getc(reg);
+            break;
+        case TRAP_OUT:
+            T_out(reg);
+            break;
+        case TRAP_PUTS:
+            T_puts(reg, memeory);
+            break;
+        case TRAP_IN:
+            T_in(reg);
+            break;
+        case TRAP_PUTSP:
+            T_putsp(reg, memeory);
+            break;
+        case TRAP_HALT:
+            T_halt(running);
+            break;
+    }
+}
+
+// TRAP_GETC: Read a char from the keyboard and store in R0
+void T_getc(uint16_t *reg) { reg[R0] = getchar(); }
+
+// TRAP_OUT: Print in the terminal the char stored in R0
+void T_out(uint16_t *reg) { fprintf(stdout, "%c", (char)reg[R0]); }
+
+// TRAP_PUTS
+// Write a string of charaters to the console stored contiguously in the memory starting
+// from the address specify in R0
+void T_puts(uint16_t *reg, uint16_t *memory)
+{
+    uint16_t* c = memory + reg[R0];
+    while (*c) {
+        putc((char)*c, stdout);
+        ++c;
+    }
+    fflush(stdout);
+}
+
+// TRAP_IN
+// Like TRAP_GETC but print to the console
+void T_in(uint16_t *reg)
+{
+    char c = getchar();
+    putc(c, stdout);
+    fflush(stdout);
+    reg[R0] = (uint16_t)c;
+    update_flag(reg, R0);
+}
+
+// TRAP_PUTSP
+// Output one char per byte, to two byte per word 
+void T_putsp(uint16_t *reg, uint16_t *memory)
+{
+    uint16_t* c = memory + reg[R0];
+    while (*c) {
+        char c1 = (*c) & 0xFF;
+        putc(c1, stdout);
+        char c2 = (*c) >> 8;
+        if (c2) putc(c2, stdout);
+        ++c;
+    }
+    fflush(stdout);
+}
+
+// TRAP_HALT
+// Keep track of the running VM in a boolean
+void T_halt(bool running) { running = false; }
 
 
 
