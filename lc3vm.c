@@ -260,7 +260,7 @@ void OP_BR(uint16_t *reg, uint16_t instruction)
 // ===================================================================================
 // TRAP routines are used for performing common tasks and interacting with the I/O
 // TRAP routines are identified by trap code -> 1111|0000|TRAPVEC8
-void OP_TRAP(uint16_t *reg, uint16_t *memeory, uint16_t instruction, bool running)
+void OP_TRAP(uint16_t *reg, uint16_t *memory, uint16_t instruction, bool *running)
 {
     switch (instruction & 0xFF) {
         case TRAP_GETC:
@@ -270,16 +270,22 @@ void OP_TRAP(uint16_t *reg, uint16_t *memeory, uint16_t instruction, bool runnin
             T_out(reg);
             break;
         case TRAP_PUTS:
-            T_puts(reg, memeory);
+            T_puts(reg, memory);
             break;
         case TRAP_IN:
             T_in(reg);
             break;
         case TRAP_PUTSP:
-            T_putsp(reg, memeory);
+            T_putsp(reg, memory);
             break;
         case TRAP_HALT:
             T_halt(running);
+            break;
+        case TRAP_INU16:
+            T_inu16(reg);
+            break;
+        case TRAP_OUTU16:
+            T_outu16(reg);
             break;
     }
 }
@@ -331,8 +337,15 @@ void T_putsp(uint16_t *reg, uint16_t *memory)
 
 // TRAP_HALT
 // Keep track of the running VM in a boolean
-void T_halt(bool running) { running = false; }
+void T_halt(bool *running) { *running = false; }
 
+// TRAP_INU16
+// Take a uint16_t and store in R0
+void T_inu16(uint16_t *reg) { fscanf(stdin, "%hu", &reg[R0]); }
+
+// TRAP_INU16
+// Write a uint16_t stored in R0 and print it
+void T_outu16(uint16_t *reg) { fprintf(stdout, "%hu\n", reg[R0]); }
 
 
 // ===================================================================================
@@ -354,4 +367,80 @@ void OP_RES()
 {
     printf("RES instruction is not implemented!\n");
     abort();
+}
+
+
+
+// ===================================================================================
+// ================================== RUN PROGRAM ====================================
+// ===================================================================================
+void programRun(uint16_t* memory)
+{
+    // Register Initialization
+	uint16_t reg[REG_SIZE] = {0};
+    reg[RPC] = PC_START;
+
+    // Start virtual machine
+    bool running = true;
+
+    while (running)
+    {
+        uint16_t instruction = mem_read(memory, reg[RPC]++);
+        uint16_t op = instruction >> 12;
+
+        switch (op)
+        {
+        case op_add:
+            OP_ADD(reg, instruction);
+            break;
+        case op_and:
+            OP_AND(reg, instruction);
+            break;
+        case op_not:
+            OP_NOT(reg, instruction);
+            break;
+        case op_br:
+            OP_BR(reg, instruction);
+            break;
+        case op_jmp:
+            OP_JMP(reg, instruction);
+            break;
+        case op_jsr:
+            OP_JSR(reg, instruction);
+            break;
+        case op_ld:
+            OP_LD(reg, memory, instruction);
+            break;
+        case op_ldi:
+            OP_LDI(reg, memory, instruction);
+            break;
+        case op_ldr:
+            OP_LDR(reg, memory, instruction);
+            break;
+        case op_lea:
+            OP_LEA(reg, instruction);
+            break;
+        case op_st:
+            OP_ST(reg, memory, instruction);
+            break;
+        case op_sti:
+            OP_STI(reg, memory, instruction);
+            break;
+        case op_str:
+            OP_STR(reg, memory, instruction);
+            break;
+        case op_trap:
+            OP_TRAP(reg, memory, instruction, &running);
+            break;
+        case op_res:
+            OP_RES();
+            break;
+        case op_rti:
+            OP_RTI();
+            break;
+        default:
+            printf("Instruction not implemented\n");
+            abort();   
+        }
+    }
 }

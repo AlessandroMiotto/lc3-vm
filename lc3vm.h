@@ -46,7 +46,10 @@ void OP_JMP(uint16_t *reg, uint16_t instruction);                   // 0xC 1100 
 void OP_RES();                                                      // 0xD 1101 Unused (not implemented)
 void OP_LEA(uint16_t *reg, uint16_t instruction);                   // 0xE 1110 Load effective address
 void OP_TRAP(uint16_t *reg, uint16_t *memory, 						// 0xF 1111 System trap/call
-			 uint16_t instruction, bool running);					
+			 uint16_t instruction, bool *running);					
+
+enum op {op_br = 0, op_add, op_ld, op_st, op_jsr, op_and, op_ldr, op_str, op_rti, op_not,
+		 op_ldi, op_sti, op_jmp, op_res, op_lea, op_trap};
 
 
 // TRAP FUNCTIONS
@@ -55,10 +58,13 @@ void T_out(uint16_t *reg);						// 0x21 Write a char to console
 void T_puts(uint16_t *reg, uint16_t *memory);	// 0x22 Write a string of chars to the console
 void T_in(uint16_t *reg);						// 0x23 Read a char from keyboard and print to console
 void T_putsp(uint16_t *reg, uint16_t *memory);	// 0x24 Output a byte string
-void T_halt(bool running);						// 0x25 Halt the execution
+void T_halt(bool *running);						// 0x25 Halt the execution
+void T_inu16(uint16_t *reg);					// 0x26 Read a uint16_t from terminal
+void T_outu16(uint16_t *reg);					// 0x27 Write uint16_t
 
 enum traps {TRAP_GETC = 0x20, TRAP_OUT = 0x21, TRAP_PUTS = 0x22, 
-			TRAP_IN = 0x23, TRAP_PUTSP = 0x24, TRAP_HALT = 0x25 };
+			TRAP_IN = 0x23, TRAP_PUTSP = 0x24, TRAP_HALT = 0x25,
+			TRAP_INU16 = 0x26, TRAP_OUTU16 = 0x27 };
 
 
 // MAPPED REGISTERS
@@ -71,5 +77,7 @@ enum {MR_KBSR = 0xFE00, MR_KBDR = 0xFE02};
 uint16_t sign_extend(uint16_t x, int bit_count);
 uint16_t mem_read(uint16_t *memory, uint16_t address);
 void mem_write(uint16_t *memory, uint16_t address, uint16_t val);
+
+void programRun(uint16_t* memory);
 
 #endif
