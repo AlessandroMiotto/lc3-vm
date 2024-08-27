@@ -67,7 +67,7 @@ The last operation (TRAP) includes a set of more complex instructions that allow
 
 Assembly example
 --------------
-The assembly example included in this repository (`code.asm`) calculates the sum of two 16-bit numbers entered by the user in the terminal
+The assembly example included in this repository (`code.asm`) calculates the sum of two 16-bit numbers entered by the user in the terminal. You can find more assembly samples (e.g. multiplication between two number) in the examples directory.
 ```assembly
 TRAP IN_U16         ; write uint16_t in R0 from keyboard
 ADD R1 R0 0x00      ; add content of R0 to R1

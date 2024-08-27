@@ -251,7 +251,7 @@ void OP_BR(uint16_t *reg, uint16_t instruction)
     uint16_t PC_OFFSET = sign_extend(instruction & 0x1FF, 9);
     uint16_t COND_FLAG = (instruction >> 9) & 0x7;
     if (COND_FLAG & reg[RCND])
-        reg[RPC] += PC_OFFSET;
+        reg[RPC] = PC_START + PC_OFFSET;
 }
 
 

@@ -25,7 +25,7 @@ def main():
         program[i] = format(int(program[i], 2), '04x')
 
     # open file and print in binary
-    binfile = open("program.bin", "wb")
+    binfile = open("assembler/program.bin", "wb")
     for inst in program:
         binfile.write(int(format(int(inst, 16), '016b'), 2).to_bytes(2, byteorder='little'))
     binfile.close()
@@ -119,7 +119,7 @@ def instrAttribute(instruction, parts):
             instruction += "000" + registers[parts[1]] + "000000"
         else:
             # 0100|1|***OFFSET11
-            instruction += "1" + format(int(parts[2], 16), '011b')
+            instruction += "1" + format(int(parts[1], 16), '011b')
     
     # BR instructions: 0000|NZP|OFFSET009
     if parts[0] == "BR":
