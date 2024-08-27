@@ -79,5 +79,6 @@ uint16_t mem_read(uint16_t *memory, uint16_t address);
 void mem_write(uint16_t *memory, uint16_t address, uint16_t val);
 
 void programRun(uint16_t* memory);
+void loadProgram(char* fileName, uint16_t* memory);
 
 #endif
