@@ -1,11 +1,12 @@
 CC = gcc
-FLAGS = -Wall -Wextra
+FLAGS = -O3
 
-main: main.c lc3vm.c
-	$(CC) main.c lc3vm.c -o main $(FLAGS)
+main: vm/main.c vm/lc3vm.c
+	@$(CC) vm/main.c vm/lc3vm.c -o vm/main $(FLAGS)
+	@python3 assembler/assembler.py
 
 run:
-	@./main
+	@./vm/main
 
 clean:
-	@rm main
+	@rm vm/main

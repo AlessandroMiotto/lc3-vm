@@ -1,11 +1,11 @@
+import sys
+
 # Python script that translate LC3 assembly code 
 # to binary file. Input assembly file path and output
 # binary code
 def main():
     # Load Assembly File
-    print("Enter LC3 assembly file path: ")
-    asm_path = input()
-    file = open(asm_path, "r")
+    file = open(sys.path[0] + "/../code.asm", "r")
     text = file.readlines()
     file.close()
 
@@ -25,9 +25,7 @@ def main():
         program[i] = format(int(program[i], 2), '04x')
 
     # open file and print in binary
-    print("Enter binary file name: ")
-    bin_path = input()
-    binfile = open(bin_path+".bin", "wb")
+    binfile = open("program.bin", "wb")
     for inst in program:
         binfile.write(int(format(int(inst, 16), '016b'), 2).to_bytes(2, byteorder='little'))
     binfile.close()

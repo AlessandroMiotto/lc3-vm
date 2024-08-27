@@ -159,7 +159,7 @@ void OP_LDR(uint16_t *reg, uint16_t *memory, uint16_t instruction)
 }
 
 // ==================================== LEA ===========================================
-// LEA Load Effective Address: load memory address to refister DR1 but it does not 
+// LEA Load Effective Address: load memory address to register DR1 but it does not 
 // bring program data into register but only the memory location.
 // 1110|DR1|PCOFFSET9
 void OP_LEA(uint16_t *reg, uint16_t instruction)
@@ -341,7 +341,7 @@ void T_halt(bool *running) { *running = false; }
 
 // TRAP_INU16
 // Take a uint16_t and store in R0
-void T_inu16(uint16_t *reg) { fscanf(stdin, "%hu", &reg[R0]); }
+void T_inu16(uint16_t *reg) { if(fscanf(stdin, "%hu", &reg[R0])); }
 
 // TRAP_INU16
 // Write a uint16_t stored in R0 and print it
