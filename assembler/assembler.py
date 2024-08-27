@@ -1,63 +1,39 @@
+# Python script that translate LC3 assembly code 
+# to binary file. Input assembly file path and output
+# binary code
 def main():
-    file = open("code.asm", "r")
+    # Load Assembly File
+    print("Enter LC3 assembly file path: ")
+    asm_path = input()
+    file = open(asm_path, "r")
     text = file.readlines()
     file.close()
-    program = [0] * len(text)
+
+    # Program array that contain binary
+    program = [0] * len(text)   
+
     for i in range (len(text)):
-        text[i], _, _ = text[i].partition(";")
-        text[i].replace('\n', '')
-        parts = text[i].split()
-        program[i] = instructions[parts[0]]
+        text[i], _, _ = text[i].partition(";")  # Remove comments
+        text[i].replace('\n', '')               # Remove end of line
+        parts = text[i].split()                 # split each line
 
-        if parts[0] == "TRAP":
-           program[i] += traps[parts[1]]
-        
-        if parts[0] == "ADD" or parts[0] == "AND":
-           program[i] += registers[parts[1]] + registers[parts[2]]
-           if parts[3] in registers:
-               program[i] += "000" + registers[parts[3]]
-           else:
-               program[i] += '1' + format(int(parts[3], 16), '05b')
+        # take instructions attribute
+        program[i] = instrAttribute(instructions[parts[0]], parts)
 
-        if parts[0] == "LD" or parts[0] == "LDI" or parts[0] == "LEA":
-            program[i] += registers[parts[1]] + format(int(parts[2], 16), '05b')
-
-        if parts[0] == "LDR":
-            program[i] += registers[parts[1]] + registers[parts[2]] + format(int(parts[3], 16), '05b')
-        
-        if parts[0] == "ST" or parts[0] == "STI":
-            program[i] += registers[parts[1]] + format(int(parts[2], 16), '09b')
-        
-        if parts[0] == "STR":
-            program[i] += registers[parts[1]] + registers[parts[2]] + format(int(parts[3], 16), '06b')
-        
-        if parts[0] == "JMP":
-            program[i] += "000" + registers[parts[1]] + "000000"
-        
-        if parts[0] == "JSR":
-            if parts[1] in registers:
-                program[i] += "000" + registers[parts[1]] + "000000"
-            else:
-                program[i] += "1" + format(int(parts[2], 16), '011b')
-        
-        if parts[0] == "BR":
-            if parts[1] == "P":
-                program[i] += "001" + format(int(parts[2], 16), '09b')
-            elif parts[1] == "Z":
-                program[i] += "010" + format(int(parts[2], 16), '09b')
-            else:
-                program[i] += "100" + format(int(parts[2], 16), '09b')
-
+        # print output and transform into hex
         print(program[i], hex(int(program[i], 2)), text[i])
         program[i] = format(int(program[i], 2), '04x')
 
-    print(program)
-    binfile = open("program.bin", "wb")
+    # open file and print in binary
+    print("Enter binary file name: ")
+    bin_path = input()
+    binfile = open(bin_path+".bin", "wb")
     for inst in program:
         binfile.write(int(format(int(inst, 16), '016b'), 2).to_bytes(2, byteorder='little'))
     binfile.close()
-    
 
+# ---------- DICTIONARIES FOR REGISTER -----------
+# ------------- AND INSTRUCTIONS -----------------
 
 registers = {
     'R0' : '000',
@@ -73,6 +49,7 @@ registers = {
 instructions = {
     'ADD'   : '0001',
     'AND'   : '0101',
+    'NOT'   : '1001',
     'TRAP'  : '11110000',
     'HALT'  : '1111000000100101',
     'LD'    : '0010',
@@ -96,6 +73,66 @@ traps = {
     'IN_U16'    : '00100110',
     'OUT_U16'   : '00100111',
 }
+
+
+def instrAttribute(instruction, parts):
+    # TRAP instruction: 1111|0000|TRAPVEC8  
+    if parts[0] == "TRAP":
+        instruction += traps[parts[1]]
+    
+    # ADD/AND instructions  
+    if parts[0] == "ADD" or parts[0] == "AND":
+        instruction += registers[parts[1]] + registers[parts[2]]
+        if parts[3] in registers:
+            # opcode|DR1|SR1|0|00|SR2
+            instruction += "000" + registers[parts[3]]
+        else:
+            # opcode|DR1|SR1|1|IMM05
+            instruction += '1' + format(int(parts[3], 16), '05b')
+
+    # NOT instruction: 1001|DR1|SR1|******
+    if parts[0] == "NOT":
+        instruction += registers[parts[1]] + registers[parts[2]] + "111111"
+
+    # LD/LDI/LEA instructions: opcode|DR1|PCOFFSET9
+    if parts[0] == "LD" or parts[0] == "LDI" or parts[0] == "LEA":
+        instruction += registers[parts[1]] + format(int(parts[2], 16), '05b')
+
+    # LDR instruction: 0110|DR1|SR1|OFFST6
+    if parts[0] == "LDR":
+        instruction += registers[parts[1]] + registers[parts[2]] + format(int(parts[3], 16), '05b')
+    
+    # ST/STI instruction: opcode|SR1|PCOFFSET9
+    if parts[0] == "ST" or parts[0] == "STI":
+        instruction += registers[parts[1]] + format(int(parts[2], 16), '09b')
+    
+    # STR instruction: 0011|SR1|SR2|OFFST6
+    if parts[0] == "STR":
+        instruction += registers[parts[1]] + registers[parts[2]] + format(int(parts[3], 16), '06b')
+    
+    # JMP instruction: 1100|000|SR1|000000
+    if parts[0] == "JMP":
+        instruction += "000" + registers[parts[1]] + "000000"
+    
+    # JSR instructions
+    if parts[0] == "JSR":
+        if parts[1] in registers:
+            # 0100|0|00|SR1|000000
+            instruction += "000" + registers[parts[1]] + "000000"
+        else:
+            # 0100|1|***OFFSET11
+            instruction += "1" + format(int(parts[2], 16), '011b')
+    
+    # BR instructions: 0000|NZP|OFFSET009
+    if parts[0] == "BR":
+        if parts[1] == "P":
+            instruction += "001" + format(int(parts[2], 16), '09b')
+        elif parts[1] == "Z":
+            instruction += "010" + format(int(parts[2], 16), '09b')
+        else:
+            instruction += "100" + format(int(parts[2], 16), '09b')
+
+    return instruction
 
 if __name__ == "__main__":
     main()
