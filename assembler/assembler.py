@@ -21,7 +21,7 @@ def main():
         program[i] = instrAttribute(instructions[parts[0]], parts)
 
         # print output and transform into hex
-        print(program[i], hex(int(program[i], 2)), text[i])
+        print(f'{hex(0x300 + i)}: {program[i]} {hex(int(program[i], 2)).upper()} {text[i]}')
         program[i] = format(int(program[i], 2), '04x')
 
     # open file and print in binary

@@ -119,9 +119,7 @@ void OP_NOT(uint16_t *reg, uint16_t instruction)
 
 // ==================================== LD ============================================
 // LD: load data from main memory to a register DR1
-// PC + offset memory address has memory address of the actual address.
-//
-//                              1010|DR1|PCOFFSET9
+// 1010|DR1|PCOFFSET9
 // Where: 
 //  - 1010 is the operetion code for OP_LDI
 //  - DR1 is the destination register that store the loaded value
@@ -138,6 +136,13 @@ void OP_LD(uint16_t *reg, uint16_t *memory, uint16_t instruction)
 // LDI: Load Indirect, is used to load a value from a location in memory into a register
 // PC + offset memory address has memory address of the actual address.
 // 1010|DR1|PCOFFSET9
+/* UTILIZATION EXAMPLE:
+    Memory:
+        0x123: 0x456
+        ...
+        0x456: 'a'
+    Program: (e.g. PC = 0x100)
+        LID R0 0x023 ; load value pointed by PC + offset: 'a' */
 void OP_LDI(uint16_t *reg, uint16_t *memory, uint16_t instruction)
 {
     uint16_t DR1 = (instruction >> 9) & 0x7;
@@ -147,7 +152,7 @@ void OP_LDI(uint16_t *reg, uint16_t *memory, uint16_t instruction)
 }
 
 // ==================================== LDR ===========================================
-// LDR: Load Register: is like LD but we specify a base to start offset
+// LDR Load Register: load memory in position SR1 + offset to DR1
 // 0110|DR1|SR1|OFFST6
 void OP_LDR(uint16_t *reg, uint16_t *memory, uint16_t instruction)
 {
@@ -159,8 +164,7 @@ void OP_LDR(uint16_t *reg, uint16_t *memory, uint16_t instruction)
 }
 
 // ==================================== LEA ===========================================
-// LEA Load Effective Address: load memory address to register DR1 but it does not 
-// bring program data into register but only the memory location.
+// LEA Load Effective Address: load in the register DR1 program position RPC + offset
 // 1110|DR1|PCOFFSET9
 void OP_LEA(uint16_t *reg, uint16_t instruction)
 {
@@ -175,7 +179,7 @@ void OP_LEA(uint16_t *reg, uint16_t instruction)
 // ===================================================================================
 
 // ==================================== ST ============================================
-// ST: store the value of a given register SR1 to a memory location OFFSET9.
+// ST: store the value of a given register SR1 to a memory location PC + offset.
 // 0011|SR1|PCOFFSET9
 void OP_ST(uint16_t *reg, uint16_t *memory, uint16_t instruction)
 {
@@ -196,7 +200,7 @@ void OP_STI(uint16_t *reg, uint16_t *memory, uint16_t instruction)
 }
 
 // ==================================== STR ============================================
-// STR: like ST but instead of starting from RPC, we can specify another base in SR2.
+// STR: like ST but instead of starting from RPC, we can specify another address base in SR2.
 // 0011|SR1|SR2|OFFST6
 void OP_STR(uint16_t *reg, uint16_t *memory, uint16_t instruction)
 {
@@ -222,14 +226,14 @@ void OP_JMP(uint16_t *reg, uint16_t instruction)
 }
 
 // ==================================== JSR ===========================================
-// JSR is a control flow that help to implement subroutines. It has two formmat:
-// - JSR:  0100|1|***OFFSET11   -> 
-// - JSRR: 0100|0|00|SR1|000000
-// save previous position to register R7
+// JSR is a control flow that help to implement subroutines (it save provious position 
+// into register R7). It has two formmat:
+// - JSR:  0100|1|***OFFSET11    -> jump to PC + offset 
+// - JSRR: 0100|0|00|SR1|000000  -> jump to PC + SR1
 void OP_JSR(uint16_t *reg, uint16_t instruction)
 {
     uint16_t JMP_FLAG = (instruction >> 11) & 1;
-    reg[R7] = reg[RPC]; // save in R7 where ew branch
+    reg[R7] = reg[RPC]; // save in R7 where we branch
     if (JMP_FLAG){
         uint16_t PC_OFFSET = sign_extend(instruction & 0x7FF, 11);
         reg[RPC] += PC_OFFSET;
@@ -241,7 +245,8 @@ void OP_JSR(uint16_t *reg, uint16_t instruction)
 }
 
 // ==================================== BR ============================================
-// BR: conditional jump in base of last operation computed
+// BR: conditional jump in base of last operation computed.
+// Jump of offset from current position RPC
 // - NZP = 001 : jump if positive
 // - NZP = 010 : jump if zero
 // - NZP = 100 : jump if negative
@@ -251,7 +256,7 @@ void OP_BR(uint16_t *reg, uint16_t instruction)
     uint16_t PC_OFFSET = sign_extend(instruction & 0x1FF, 9);
     uint16_t COND_FLAG = (instruction >> 9) & 0x7;
     if (COND_FLAG & reg[RCND])
-        reg[RPC] = PC_START + PC_OFFSET;
+        reg[RPC] += PC_OFFSET;
 }
 
 
@@ -291,10 +296,16 @@ void OP_TRAP(uint16_t *reg, uint16_t *memory, uint16_t instruction, bool *runnin
 }
 
 // TRAP_GETC: Read a char from the keyboard and store in R0
-void T_getc(uint16_t *reg) { reg[R0] = getchar(); }
+void T_getc(uint16_t *reg) { 
+    reg[R0] = (uint16_t)getchar();
+    update_flag(reg, R0);
+}
 
 // TRAP_OUT: Print in the terminal the char stored in R0
-void T_out(uint16_t *reg) { fprintf(stdout, "%c", (char)reg[R0]); }
+void T_out(uint16_t *reg) { 
+    putc((char)reg[R0], stdout);
+    fflush(stdout); 
+}
 
 // TRAP_PUTS
 // Write a string of charaters to the console stored contiguously in the memory starting
@@ -321,7 +332,8 @@ void T_in(uint16_t *reg)
 }
 
 // TRAP_PUTSP
-// Output one char per byte, to two byte per word 
+// Write a string of charaters to the console stored contiguously in the memory starting
+// from the address specify in R0. Each memory address contain 2 char (one char per byte)
 void T_putsp(uint16_t *reg, uint16_t *memory)
 {
     uint16_t* c = memory + reg[R0];
@@ -337,7 +349,10 @@ void T_putsp(uint16_t *reg, uint16_t *memory)
 
 // TRAP_HALT
 // Keep track of the running VM in a boolean
-void T_halt(bool *running) { *running = false; }
+void T_halt(bool *running) {
+    fflush(stdout);
+    *running = false; 
+}
 
 // TRAP_INU16
 // Take a uint16_t and store in R0
@@ -385,7 +400,11 @@ void programRun(uint16_t* memory)
 
     while (running)
     {
+        // printf("0x%04X: ", reg[RPC]);
         uint16_t instruction = mem_read(memory, reg[RPC]++);
+        // printf("0x%04X", instruction);
+        // getchar();
+        // printf("\n");
         uint16_t op = instruction >> 12;
 
         switch (op)
